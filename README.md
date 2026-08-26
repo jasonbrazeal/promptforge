@@ -76,6 +76,8 @@ export PROMPTFORGE_GATEWAY_URL=http://127.0.0.1:8081/v1
 cargo run -p promptforge-cli -- run prompts/hello.md
 ```
 
+Add `--verbose` (`-v`) to `run` to print the run's lifecycle to stderr as it happens: section boundaries, model turns, tool calls, and any `log()` checkpoints from the prompt's Lua. The gateway logs each chat completion request and response (model, message and tool counts, finish reason, elapsed time) at `RUST_LOG=info`.
+
 Interactive prompt work against an already-running gateway:
 
 ```bash

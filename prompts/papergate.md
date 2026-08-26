@@ -24,7 +24,7 @@ end
 store.write("paper.md", args)
 var.document = args:match("document:%s*[\"']?([%w%-_]+)") or "paper"
 
-models.default("analyst", "A model suited for careful analysis", { thinking = false, temperature = 0, context = 40000, max_tokens = 4096 })
+models.default("analyst", "A model suited for careful analysis", { thinking = false, temperature = 0, context = 40000, max_tokens = 8192 })
 models.bind("extractor", "A small open-weights reasoning model that is good at tool calls", { thinking = false, temperature = 0, context = 16384, max_tokens = 4096 })
 ```
 
@@ -638,11 +638,173 @@ end
 var.report_support = table.concat(out, "\n")
 ```
 
+## Evaluate
+
+```lua
+models.use("analyst")
+```
+
+You are writing the gate report for one WG21 paper. Everything below was extracted from the paper by earlier passes and is the only material you may cite: treat it as the paper's content, quote it, cite it by line number, and never go beyond it.
+
+Digest (classification, tier, and their basis):
+
+{{ var.report_digest }}
+
+Derivation (thesis, problem, scope boundary, load-bearing claims, ask calibration):
+
+{{ var.report_derivation }}
+
+Asks:
+
+{{ var.report_asks }}
+
+Support verdicts (which claims carry separate support, which stand bare):
+
+{{ var.report_support }}
+
+Concessions (what the paper admits about itself):
+
+{{ var.report_concessions }}
+
+Scope statements:
+
+{{ var.report_scope }}
+
+Claims:
+
+{{ var.claims_index }}
+
+Evidence inventory (every code listing and table, first line each):
+
+{{ var.report_evidence }}
+
+References:
+
+{{ var.report_references }}
+
+Section map:
+
+{{ var.chunk_map }}
+
+Write the report as a delegate's assessment: what the paper shows, and fails to show, as evidence for standardization. You do not decide whether the component belongs in the standard; you report whether the paper makes its case. Report only what the artifacts above contain: do not invent evidence, do not research the topic, do not fill gaps the paper left.
+
+Select the criteria set from the digest's classification: "library" uses the library criteria, "language" uses the language criteria, "both" uses the union with no criterion listed twice. Scale every judgment of sufficiency and every gap's severity to the digest's tier: the same missing section is fatal at massive and a non-issue at trivial.
+
+### The emit rule
+
+A criterion gets its own H2 section in the report if and only if the paper contains at least one sentence that speaks to it - even a bare assertion counts as speaking to it. If the paper says nothing about a criterion, do not write a section for it and do not write "N/A"; fold it into the single final `## Missing From The Paper` paragraph. Sections show what the paper argued; the closing paragraph shows the void. Most papers produce a short report and a long closing paragraph. That is the honest result; do not pad it.
+
+Within an emitted section, characterize the evidence in prose without a scored label. The two states the prose should make unmistakable:
+
+- **Demonstrated** - the paper supplies specific evidence: named implementations, dated deployment history, counts with a cited source, a benchmark, a named displaced alternative. Claims the support verdicts mark as supported are the demonstrated core.
+- **Asserted** - the paper claims the thing but supplies no evidence for it; the unsupported claims are these.
+
+The third state, absent, never appears in a section; absent criteria go to the closing paragraph.
+
+### Library criteria
+
+1. **The GitHub Test** - what does standardization deliver that downloading the library does not? This is the central question for a library paper; a paper that never addresses it has not started. Demonstrated when the paper names the specific benefit beyond availability (portability guarantee across all conforming implementations, ecosystem-wide vocabulary coordination, or a capability that requires compiler support) and backs it. Asserted when it claims standardization is valuable without saying what it adds over a download.
+2. **Coordination Problem** - is this a concept everybody needs that every library implements differently? Demonstrated when the paper names 3 or more incompatible implementations, with links for a medium+ tier. Asserted when it claims fragmentation without naming the implementations.
+3. **Stability Confidence** - has the design converged enough to survive a permanent freeze? Demonstrated when the paper reports 2 or more years of production use with an unchanged interface, or shows known deficiencies resolved rather than deferred. Asserted when it claims maturity with no dates or deployment record.
+4. **Vocabulary Necessity** - do independent libraries need to agree on this type to interoperate, or would they merely benefit from a blessed implementation? Demonstrated when the paper documents cross-library boundary traffic (code-search counts, named projects that convert between the competing types). Asserted when it claims interoperation value with no boundary evidence.
+5. **Reach Test** - how large is the constituency, and does value scale linearly (each user benefits once) or quadratically (value grows with the square of adoption because libraries interoperate)? Demonstrated when the paper gives a population number with a source or method and names the scaling class. Asserted when it says "many" or "thousands" with no source.
+6. **Complexity Budget** - what does the component cost in wording pages, new names, and interactions with existing facilities? Demonstrated when the paper counts at least one of these; strong when it counts all three. The digest carries these counts.
+7. **Return on Complexity** - does the value per unit of complexity beat the next-best proposal competing for the same committee budget? Demonstrated when the paper names the displaced alternative and argues the comparison.
+8. **Interaction Tax** - what ongoing cost does this component impose on everything standardized after it? Demonstrated when the paper surveys its interaction surface with future proposals.
+9. **Standardization Penalty** - what does the freeze forfeit: domain velocity, ABI horizon, expected feature lag versus the ecosystem version? Demonstrated when the paper prices the freeze against the ecosystem release cadence and acknowledges that the cost to add is finite while the cost to keep is unbounded.
+10. **Standardization Dividend** - does the paper show a net positive return after Penalty, Interaction Tax, and committee cost?
+
+### Language criteria
+
+1. **Prior Art Survey** - does the paper survey how other languages solve this, naming them and analyzing what worked? Demonstrated when it names 3 or more languages with design analysis. Asserted when it name-drops languages without analysis.
+2. **Existing Practice in C++** - does the paper survey how users get this effect today: macros, library components, code generation, template metaprogramming? Demonstrated when it names the current workarounds and their limits.
+3. **C++ Design Constraints** - does the paper show awareness of C++'s unique constraints: value semantics, zero-overhead abstraction, deterministic destruction, the compilation model, ABI? Demonstrated when the design is argued against at least one of these named constraints.
+4. **Minimality** - does the paper prove this is the smallest feature that achieves the goal, and defeat the claim that a smaller one would do? Demonstrated when each part of the feature is justified individually for a large feature.
+5. **Design Justification** - does the paper explain why this design over the alternatives on the axes that matter (minimal, flexible, general, composable)? Demonstrated when it presents alternatives considered and the reason for the choice. Asserted when it presents one design as if no others exist.
+6. **Necessity** - does the paper explain why a library cannot do this? Demonstrated when it identifies what a library-only solution cannot reach and what that gap is worth.
+7. **Interaction Survey** - does the paper survey how the feature interacts with each existing feature it touches? Scale to size: a small feature touches 2-3 things; a large one touches dozens and must address each.
+8. **Implementation Evidence** - does the paper show a working compiler implementation, or explain why one is infeasible?
+9. **Teaching Burden** - does the paper estimate the teaching cost and place the feature in the language's mental model? "No teaching impact." is a complete answer for a trivial feature; a large feature owes a substantial section.
+
+### Evidence obligations (library, medium tier and up)
+
+These four are the measurements a medium-or-larger library paper must supply. Note any that are missing in the closing paragraph.
+
+- Field reports from years of real deployment.
+- A reach census with the scaling class named.
+- A complexity estimate: wording size, name count, interaction survey.
+- A docket comparison: why this proposal over the alternatives competing for the same budget.
+
+### Mandatory sections (both classifications)
+
+Check for all three. Scale the expectation to the tier.
+
+- **Implementation** - a complete implementation with benchmarks, tests, and documentation (library), or a proof-of-concept compiler (language). A patch suffices for a trivial fix.
+- **Steel man against standardization** - the strongest argument that the ecosystem is enough, stated and then defeated with evidence. Its absence is the paper failing to run its own GitHub Test.
+- **Steel man of competing designs** - the strongest case for the alternative designs, stated and then answered with the reason this design was chosen.
+
+### Output shape
+
+Write the report in exactly this shape. Emit an H2 only for criteria the paper addresses.
+
+```markdown
+# {{ var.document }} {{ var.title }}
+
+{One opening paragraph: the tier with its quantities, the baseline question for the classification, and a one-sentence verdict on the state of the case.}
+
+## {criterion name}
+
+{Cite line numbers, quote or paraphrase what the paper says, characterize the evidence in prose.}
+
+## Missing From The Paper
+
+{One paragraph. Name every criterion the paper did not address, explain why each matters at this tier, and state what a delegate cannot conclude as a result. Fold them into coherent analysis, not a list.}
+```
+
+Structure rules:
+
+- The H1 is `# {{ var.document }} {{ var.title }}`, exactly.
+- Emit one H2 per criterion the paper addresses, titled with the criterion name. Under it, cite line numbers, quote or paraphrase, and characterize the evidence in prose.
+- The final section is always `## Missing From The Paper`: one expository paragraph combining every unaddressed criterion into a single analysis that explains what is absent, why it matters at this tier, and what cannot be concluded.
+- Do not add YAML front matter, a date line, or a metadata footer; the runtime adds them.
+
+Report constraints:
+
+- NEVER emit a section for a criterion the paper does not address; fold every unaddressed criterion into the single `## Missing From The Paper` paragraph.
+- NEVER invent evidence, research the topic, or fill a gap the paper left; cite a line number or name the absence for every finding.
+- ALWAYS scale sufficiency judgments and gap severity to the digest's tier; the same missing section is fatal at massive and a non-issue at trivial.
+- Use no numeric scores, no letter grades, no traffic lights, no "Assessment:" labels. The prose carries the verdict.
+- Use dashes, never em dashes or double hyphens.
+- Your entire reply is the report and nothing else: no commentary before or after.
+
+```lua
+local finish = "?"
+do
+    local ok, value = pcall(function() return sys.reply_finish_reason end)
+    if ok and value then finish = value end
+end
+if reply == nil or reply == "" then
+    return "Evaluate produced no report (model finish_reason=" .. finish .. ")."
+end
+var.evaluation = reply
+local ok, model = pcall(function() return sys.model end)
+var.evaluation_model = (ok and model) or "analyst"
+log("Evaluate: captured " .. #reply .. " chars, finish_reason=" .. finish)
+```
+
 ## Report
 
 ```lua
-local title = var.title ~= "" and (" " .. var.title) or ""
-local parts = { "# " .. var.document .. title .. " papergate" }
+if not var.evaluation then
+    return "papergate: Evaluate produced no report"
+end
+local stamp = sys.when:sub(1, 16):gsub("T", " ") .. " UTC"
+local parts = {
+    var.evaluation,
+    "*" .. stamp .. " - " .. var.evaluation_model .. "*",
+    "---",
+    "## Appendix",
+}
 if var.report_digest then parts[#parts + 1] = var.report_digest end
 if var.report_derivation then parts[#parts + 1] = var.report_derivation end
 if var.report_asks then parts[#parts + 1] = var.report_asks end
