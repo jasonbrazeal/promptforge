@@ -559,7 +559,7 @@ end
 verdicts = {}
 tools.add_local("record_verdict", "Records the support verdict for one claim", {
     id = {"integer", "the claim's [N] id from the claims list"},
-    supported = {"boolean", "true only if the paper contains support for the claim separate from the claim's own text"},
+    supported = {"boolean", "true only if the paper contains support separate from the claim's own text; false whenever the reason cannot cite that support"},
     reason = {"string", "one line: cite the support, or state what is missing"},
 }, function(tool_args)
     table.insert(verdicts, { id = tool_args.id, supported = tool_args.supported, reason = tool_args.reason })
@@ -589,12 +589,15 @@ NOT support:
 
 - the claim's own text repeated or paraphrased;
 - a bare assertion without backing ("X is Y" alone is not support for "X is Y");
+- the author's first-person report of their own work ("I implemented X", "it passes its tests") when no artifact is shown - a report of evidence is not evidence;
 - another claim that depends on the same unsupported premise.
+
+The verdict must agree with the reason. If your reason says "bare assertion", "no evidence", "no citation", "no data", "no example", or anything of the kind, then supported is false - never record supported=true for a claim your own reason describes as unbacked. When in doubt, supported is false.
 
 Call `record_verdict` once for every claim, in id order, with these parameters:
 
 - "id": the claim's [N] id from the list above.
-- "supported": true or false.
+- "supported": true or false, consistent with your reason.
 - "reason": one line. If supported, cite the specific evidence ("worked example at line 47", "table at line 199 gives 3.10x speedup"). If unsupported, state what is missing ("no benchmark for the cited figure").
 
 Record a verdict for every claim - never skip one. When every claim has a verdict, reply with exactly `done`.
@@ -603,6 +606,7 @@ Record a verdict for every claim - never skip one. When every claim has a verdic
 table.sort(verdicts, function(a, b) return a.id < b.id end)
 local seen, judged, supported = {}, 0, 0
 local backed, gaps = {}, {}
+local mismatch = 0
 for _, v in ipairs(verdicts) do
     if not seen[v.id] then
         seen[v.id] = true
@@ -610,6 +614,9 @@ for _, v in ipairs(verdicts) do
         local where = line_by_id[v.id] and ("line " .. line_by_id[v.id]) or "unknown claim"
         if v.supported then
             supported = supported + 1
+            if v.reason:lower():find("bare assertion", 1, true) then
+                mismatch = mismatch + 1
+            end
             backed[#backed + 1] = "- [" .. v.id .. "] " .. where .. ": " .. v.reason
         else
             gaps[#gaps + 1] = "- [" .. v.id .. "] " .. where .. ": " .. v.reason
@@ -636,6 +643,9 @@ if judged < claim_count then
     out[#out + 1] = "(" .. (claim_count - judged) .. " claims received no verdict.)"
 end
 var.report_support = table.concat(out, "\n")
+if mismatch > 0 then
+    log("Decide: " .. mismatch .. " supported verdicts have 'bare assertion' rationales")
+end
 ```
 
 ## Evaluate
@@ -690,7 +700,7 @@ Write the report as a delegate's assessment: what the paper shows, and fails to 
 
 Select the criteria set from the digest's classification: "library" uses the library criteria, "language" uses the language criteria, "both" uses the union with no criterion listed twice. Scale every judgment of sufficiency and every gap's severity to the digest's tier: the same missing section is fatal at massive and a non-issue at trivial.
 
-### The emit rule
+**The emit rule.**
 
 A criterion gets its own H2 section in the report if and only if the paper contains at least one sentence that speaks to it - even a bare assertion counts as speaking to it. If the paper says nothing about a criterion, do not write a section for it and do not write "N/A"; fold it into the single final `## Missing From The Paper` paragraph. Sections show what the paper argued; the closing paragraph shows the void. Most papers produce a short report and a long closing paragraph. That is the honest result; do not pad it.
 
@@ -701,7 +711,7 @@ Within an emitted section, characterize the evidence in prose without a scored l
 
 The third state, absent, never appears in a section; absent criteria go to the closing paragraph.
 
-### Library criteria
+**Library criteria.**
 
 1. **The GitHub Test** - what does standardization deliver that downloading the library does not? This is the central question for a library paper; a paper that never addresses it has not started. Demonstrated when the paper names the specific benefit beyond availability (portability guarantee across all conforming implementations, ecosystem-wide vocabulary coordination, or a capability that requires compiler support) and backs it. Asserted when it claims standardization is valuable without saying what it adds over a download.
 2. **Coordination Problem** - is this a concept everybody needs that every library implements differently? Demonstrated when the paper names 3 or more incompatible implementations, with links for a medium+ tier. Asserted when it claims fragmentation without naming the implementations.
@@ -714,7 +724,7 @@ The third state, absent, never appears in a section; absent criteria go to the c
 9. **Standardization Penalty** - what does the freeze forfeit: domain velocity, ABI horizon, expected feature lag versus the ecosystem version? Demonstrated when the paper prices the freeze against the ecosystem release cadence and acknowledges that the cost to add is finite while the cost to keep is unbounded.
 10. **Standardization Dividend** - does the paper show a net positive return after Penalty, Interaction Tax, and committee cost?
 
-### Language criteria
+**Language criteria.**
 
 1. **Prior Art Survey** - does the paper survey how other languages solve this, naming them and analyzing what worked? Demonstrated when it names 3 or more languages with design analysis. Asserted when it name-drops languages without analysis.
 2. **Existing Practice in C++** - does the paper survey how users get this effect today: macros, library components, code generation, template metaprogramming? Demonstrated when it names the current workarounds and their limits.
@@ -726,7 +736,7 @@ The third state, absent, never appears in a section; absent criteria go to the c
 8. **Implementation Evidence** - does the paper show a working compiler implementation, or explain why one is infeasible?
 9. **Teaching Burden** - does the paper estimate the teaching cost and place the feature in the language's mental model? "No teaching impact." is a complete answer for a trivial feature; a large feature owes a substantial section.
 
-### Evidence obligations (library, medium tier and up)
+**Evidence obligations (library, medium tier and up).**
 
 These four are the measurements a medium-or-larger library paper must supply. Note any that are missing in the closing paragraph.
 
@@ -735,7 +745,7 @@ These four are the measurements a medium-or-larger library paper must supply. No
 - A complexity estimate: wording size, name count, interaction survey.
 - A docket comparison: why this proposal over the alternatives competing for the same budget.
 
-### Mandatory sections (both classifications)
+**Mandatory sections (both classifications).**
 
 Check for all three. Scale the expectation to the tier.
 
@@ -743,7 +753,7 @@ Check for all three. Scale the expectation to the tier.
 - **Steel man against standardization** - the strongest argument that the ecosystem is enough, stated and then defeated with evidence. Its absence is the paper failing to run its own GitHub Test.
 - **Steel man of competing designs** - the strongest case for the alternative designs, stated and then answered with the reason this design was chosen.
 
-### Output shape
+**Output shape.**
 
 Write the report in exactly this shape. Emit an H2 only for criteria the paper addresses.
 
