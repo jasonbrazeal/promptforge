@@ -159,8 +159,11 @@ Escalate this with recommended actions.
 | `list_from_section("## List")` | Return a list section's pre-parsed items as an array of strings |
 | `log(msg)` | Emit a diagnostic to the observer |
 | `untrusted(s)` | Wrap a string in the untrusted guard envelope |
+| `md_to_json(md)` | Chunk markdown into a flat, typed block list |
 
 Both infer forms share one shape: a single tool-free round on a fresh conversation that never sets `reply` and never touches `sys`. `models.infer(prompt)` uses the section's current model; `models.get(alias):infer(prompt)` uses any declared model. A Lua block that needs tools uses `execute` on a section.
+
+`md_to_json` is installed in every section VM (H1, sections, fanout arms, shared library). It returns a document-ordered array of block tables. Each has `type` (`h1`..`h6`, `paragraph`, `code_block`, `list`, `table`, `blockquote`, `html_block`, `thematic_break`), `content`, a 1-based source `line`, and a `section` heading path; code blocks also have `lang`. Headings flatten inline markup; code blocks are fence-stripped; every other block is a raw source slice. List items and table rows are not broken out.
 
 ## Local Tools
 

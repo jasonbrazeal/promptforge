@@ -457,6 +457,21 @@ store.write("user-data.txt", user_provided_content)
 local safe = untrusted(store.read("user-data.txt"))
 ```
 
+### Markdown chunking
+
+`md_to_json(md)` is a persistent global, installed in every section VM. It chunks a markdown string into a flat, document-ordered array of typed blocks (`h1`..`h6`, `paragraph`, `code_block`, `list`, `table`, `blockquote`, `html_block`, `thematic_break`). Each block carries `content`, a 1-based source `line`, and a `section` heading path; code blocks also carry `lang`.
+
+```lua
+local blocks = md_to_json(store.read("paper.md"))
+for i, b in ipairs(blocks) do
+  if b.type == "code_block" then
+    -- extract comments/strings only; b.lang picks the syntax
+  elseif b.type ~= "thematic_break" and b.type ~= "html_block" then
+    -- claim extraction; context = table.concat(b.section, " > ")
+  end
+end
+```
+
 ### Path Validation
 
 All store paths are validated:

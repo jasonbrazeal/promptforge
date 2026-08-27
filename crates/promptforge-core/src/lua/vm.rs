@@ -5,8 +5,9 @@ use super::{
     ModelView, ModelsInferHook, MultiValue, Mutex, Observer, Ordering, Result, RuntimeResolution,
     StdLib, StoreRef, ToolBinding, ToolCallCounts, ToolRuntime, ToolSet, Value, WriteScope, detail,
     guarded_var, harden, install_h2_models, install_h2_tools, install_instruction_budget,
-    install_log, install_lua_tool_calls, install_store_table, install_untrusted, log_byte_budget,
-    resolve_section_target, scalar_return, seal_sys, var_to_json,
+    install_log, install_lua_tool_calls, install_md_to_json, install_store_table,
+    install_untrusted, log_byte_budget, resolve_section_target, scalar_return, seal_sys,
+    var_to_json,
 };
 use crate::client::ToolSchema;
 
@@ -22,7 +23,7 @@ fn pack_sequence<T: mlua::IntoLua>(lua: &Lua, values: Vec<T>) -> mlua::Result<ml
 /// One hardened, isolated Lua VM for a section's complete lifecycle.
 ///
 /// The VM owns one Lua environment from construction until drop. Construction
-/// hardens the sandbox and installs `untrusted`; the caller then drives one
+/// hardens the sandbox and installs `untrusted` and `md_to_json`; the caller then drives one
 /// linear startup: apply the run's limits, inject the host values, install
 /// the persistent host APIs and the control globals, replay the shared
 /// library as the section's first chunk
@@ -187,8 +188,8 @@ impl SectionVm {
     /// Creates a hardened section VM.
     ///
     /// Construction installs only the sandbox, the default resource ceilings,
-    /// the instruction budget, and `untrusted` (wrapping under the run's
-    /// `nonce`). Everything else - the run's
+    /// the instruction budget, `untrusted` (wrapping under the run's
+    /// `nonce`), and `md_to_json`. Everything else - the run's
     /// limits, the host values, the persistent host APIs, the control
     /// globals, the shared-library replay, and the captured alias globals -
     /// is a separate explicit step the caller drives in that order (see the
@@ -253,6 +254,9 @@ impl SectionVm {
             return vm.construction_failed(error, observer, section);
         }
         if let Err(error) = install_untrusted(&vm.lua, nonce) {
+            return vm.construction_failed(error, observer, section);
+        }
+        if let Err(error) = install_md_to_json(&vm.lua) {
             return vm.construction_failed(error, observer, section);
         }
         install_instruction_budget(&vm.lua);

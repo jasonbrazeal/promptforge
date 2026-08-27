@@ -12,7 +12,7 @@ A runtime that executes AI prompt pipelines defined in a single markdown file. T
 ## What you get
 
 - 📄 **Markdown prompts** - frontmatter, one H1, H2 sections that run top to bottom
-- 🔧 **Lua control** - bind tools and models, compute values, write the store, fan out work
+- 🔧 **Lua control** - bind tools and models, compute values, write the store, fan out work, chunk markdown with `md_to_json`
 - 🌐 **Tools that ship** - local `web_fetch`, gateway-backed `web_search`, semantic capability binding
 - 🔌 **Inference gateway** - OpenAI-shaped chat, bearer auth, catalog at `GET /v1/models`
 - 🛰️ **MCP server** - run prompts from an agentic harness over streamable HTTP or stdio

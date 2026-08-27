@@ -5,10 +5,12 @@
 //! functions are available; the raw input `args` string and the runtime `sys`
 //! table are exposed; a writable `var` table is provided for the block to
 //! populate; an always-on `store` table gives the block the run's virtual
-//! files; and an instruction-count hook aborts a runaway block.
+//! files; `untrusted` and `md_to_json` are installed as persistent globals;
+//! and an instruction-count hook aborts a runaway block.
 //! Direct `print` and `warn` are unavailable. A persistent `log(message)`
 //! callback accepts one bounded, single-line UTF-8 string and reports it
-//! through the run's [`Observer`] as `Lua: <message>`.
+//! through the run's [`Observer`] as `Lua: <message>`. `md_to_json(md)`
+//! chunks a markdown string into a flat, typed block list.
 //!
 //! The chunk's top-level return value becomes the section's result (the finish
 //! case of the exit rule). The `var` table is read back afterward as JSON for
@@ -73,6 +75,8 @@ mod sys;
 pub(crate) use sys::*;
 mod host;
 pub(crate) use host::*;
+mod md_json;
+pub(crate) use md_json::*;
 mod tools_bridge;
 pub(crate) use tools_bridge::*;
 mod vm;

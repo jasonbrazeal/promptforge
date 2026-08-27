@@ -2980,3 +2980,79 @@ fn untrusted_global_rejects_a_non_string_argument() {
         "a non-string argument must surface as a Lua error, got {error:?}"
     );
 }
+
+#[test]
+fn md_to_json_is_visible_in_a_section_vm() {
+    let outcome = run("return type(md_to_json)", "").expect("md_to_json must be a global");
+    assert_eq!(outcome.returned.as_deref(), Some("function"));
+}
+
+#[test]
+fn md_to_json_is_callable_from_the_shared_library() {
+    let shared = program(
+        "local blocks = md_to_json('# T\\n\\nbody')\n\
+         assert(#blocks == 2, 'shared sees md_to_json')\n\
+         assert(blocks[1].type == 'h1')",
+    );
+    let vm =
+        SectionVm::new(&test_nonce(), EXECUTION, &NullObserver, "Test").expect("VM must build");
+    vm.replay_shared(&shared, &NullObserver, "Test")
+        .expect("the shared library must call md_to_json during load");
+    vm.teardown(&NullObserver, "Test");
+}
+
+#[test]
+fn md_to_json_returns_the_expected_table_shape() {
+    let source = r"
+local md = table.concat({
+  '# 1 Introduction',
+  '',
+  'We propose a change to...',
+  '',
+  '```cpp',
+  'int x; // must be trivially relocatable',
+  '```',
+  '',
+  '## 1.1 Motivation',
+  '',
+  '| A | B |',
+  '|---|---|',
+  '| 1 | 2 |',
+}, '\n') .. '\n'
+local b = md_to_json(md)
+assert(b[1].type == 'h1')
+assert(b[1].content == '1 Introduction')
+assert(b[1].line == 1)
+assert(b[1].section[1] == '1 Introduction')
+assert(b[1].section[2] == nil)
+assert(b[1].lang == nil)
+assert(b[2].type == 'paragraph')
+assert(b[2].content == 'We propose a change to...\n')
+assert(b[2].line == 3)
+assert(b[2].section[1] == '1 Introduction')
+assert(b[3].type == 'code_block')
+assert(b[3].lang == 'cpp')
+assert(b[3].content == 'int x; // must be trivially relocatable\n')
+assert(b[3].line == 5)
+assert(b[3].section[1] == '1 Introduction')
+assert(b[4].type == 'h2')
+assert(b[4].content == '1.1 Motivation')
+assert(b[4].section[1] == '1 Introduction')
+assert(b[4].section[2] == '1.1 Motivation')
+assert(b[5].type == 'table')
+assert(b[5].lang == nil)
+assert(#b == 5)
+return 'ok'
+";
+    let outcome = run(source, "").expect("md_to_json must return the typed block list");
+    assert_eq!(outcome.returned.as_deref(), Some("ok"));
+}
+
+#[test]
+fn md_to_json_rejects_a_non_string_argument() {
+    let error = run("return md_to_json({})", "").expect_err("a table is not a string");
+    assert!(
+        matches!(error, Error::Lua(_) | Error::LuaRuntime { .. }),
+        "a non-string argument must surface as a Lua error, got {error:?}"
+    );
+}
