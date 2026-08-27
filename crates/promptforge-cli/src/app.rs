@@ -48,6 +48,10 @@ pub(crate) struct RunArgs {
     /// in-memory store is used.
     #[arg(long = "store", value_name = "DIR")]
     pub(crate) store_dir: Option<PathBuf>,
+    /// Print run lifecycle observations (section boundaries, model turns,
+    /// tool calls) to stderr as they happen.
+    #[arg(short = 'v', long = "verbose")]
+    pub(crate) verbose: bool,
 }
 
 /// A single prompt run: what to run, and the run-scoped I/O and cancellation.
@@ -272,6 +276,21 @@ mod tests {
         let cli = Cli::parse_from(["promptforge", "run", "prompt.md"]);
         let Command::Run(args) = cli.command;
         assert_eq!(args.store_dir, None);
+    }
+
+    #[test]
+    fn parser_accepts_verbose_flag() {
+        let cli = Cli::parse_from(["promptforge", "run", "prompt.md"]);
+        let Command::Run(args) = cli.command;
+        assert!(!args.verbose, "verbose defaults to off");
+
+        let cli = Cli::parse_from(["promptforge", "run", "--verbose", "prompt.md"]);
+        let Command::Run(args) = cli.command;
+        assert!(args.verbose);
+
+        let cli = Cli::parse_from(["promptforge", "run", "-v", "prompt.md"]);
+        let Command::Run(args) = cli.command;
+        assert!(args.verbose);
     }
 
     #[test]

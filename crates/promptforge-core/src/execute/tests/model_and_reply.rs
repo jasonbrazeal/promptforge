@@ -805,3 +805,38 @@ async fn models_get_infer_works_without_any_section_model() {
         .expect("complete must reach the gateway");
     assert_eq!(body["model"], "analyst-model");
 }
+
+#[tokio::test]
+async fn reply_captured_into_var_rolls_forward_to_next_section() {
+    // The papergate Evaluate -> Report handoff: an epilog captures `reply`
+    // into `var`, and the next section's prologue must read it back.
+    let gateway = ScriptedGateway::start(vec![resp_text("the gate report body")]).await;
+    let addr = gateway.addr();
+    let md = "---\nname: t\ndescription: d\npromptforge: 1\n---\n\n\
+# T\n\n\
+## Evaluate\n\n\
+```lua\n\
+-- prologue\n\
+```\n\n\
+Write the report.\n\n\
+```lua\n\
+if reply == nil or reply == '' then\n\
+    return 'Evaluate produced no report.'\n\
+end\n\
+var.evaluation = reply\n\
+local ok, model = pcall(function() return sys.model end)\n\
+var.evaluation_model = (ok and model) or 'analyst'\n\
+```\n\n\
+## Report\n\n\
+```lua\n\
+if not var.evaluation then\n\
+    return 'GUARD FIRED'\n\
+end\n\
+return var.evaluation .. ' via ' .. var.evaluation_model\n\
+```\n";
+    let prompt = bound_for_model(md);
+    let out = run(&prompt, "", &[], &StoreRef::memory(), gatewayed(addr))
+        .await
+        .unwrap();
+    assert_eq!(out, "the gate report body via claude-sonnet-4-6");
+}

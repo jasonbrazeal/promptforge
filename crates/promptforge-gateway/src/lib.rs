@@ -181,6 +181,19 @@ async fn chat_completions(
     headers: HeaderMap,
     Json(request): Json<ChatRequest>,
 ) -> Result<Response, GatewayError> {
+    let result = chat_completions_inner(state, headers, request).await;
+    if let Err(error) = &result {
+        tracing::warn!(error = %error, "chat completion failed");
+    }
+    result
+}
+
+/// The chat route's body; failures are logged by the wrapping handler.
+async fn chat_completions_inner(
+    state: AppState,
+    headers: HeaderMap,
+    request: ChatRequest,
+) -> Result<Response, GatewayError> {
     check_auth(&state, &headers).await?;
     request
         .validate()
@@ -190,6 +203,20 @@ async fn chat_completions(
         live.routing.model(&request.model)?
     };
     crate::routing::require_kind(&model, ModelKind::Chat)?;
+    let started = std::time::Instant::now();
+    tracing::info!(
+        model = %request.model,
+        upstream = %model.upstream_name,
+        messages = request.messages.len(),
+        tools = request
+            .rest
+            .get("tools")
+            .and_then(|tools| tools.as_array())
+            .map_or(0, Vec::len),
+        max_tokens = ?request.rest.get("max_tokens").and_then(|value| value.as_u64()),
+        stream = request.stream,
+        "chat completion request",
+    );
     let client_id = crate::queue::ClientId::from_header(
         headers
             .get(CLIENT_HEADER)
@@ -216,6 +243,7 @@ async fn chat_completions(
             .upstream
             .stream(request, &model.upstream_name)
             .await?;
+        tracing::info!(upstream = %model.upstream_name, "chat completion stream started");
         return Ok(relay_sse(streamed, permit));
     }
     let response = model
@@ -226,6 +254,24 @@ async fn chat_completions(
     response
         .validate()
         .map_err(|reason| GatewayError::upstream_protocol(std::io::Error::other(reason)))?;
+    let choice = response.choices.first();
+    let message = choice.and_then(|choice| choice.get("message"));
+    tracing::info!(
+        model = %response.model,
+        finish_reason = ?choice
+            .and_then(|choice| choice.get("finish_reason"))
+            .and_then(|reason| reason.as_str()),
+        tool_calls = message
+            .and_then(|message| message.get("tool_calls"))
+            .and_then(|calls| calls.as_array())
+            .map_or(0, Vec::len),
+        content_chars = message
+            .and_then(|message| message.get("content"))
+            .and_then(|content| content.as_str())
+            .map_or(0, str::len),
+        elapsed = ?started.elapsed(),
+        "chat completion response",
+    );
     let mut response = response;
     if emulated {
         crate::dialect::apply_response(&mut response, &model.name);

@@ -17,7 +17,7 @@ use std::sync::Arc;
 use clap::Parser;
 use promptforge_core::CancelHandle;
 use promptforge_core::execute::RunError;
-use promptforge_core::observe::{NullObserver, Observer};
+use promptforge_core::observe::{NullObserver, Observation, Observer};
 
 use crate::app::{Cli, Command, RunRequest};
 
@@ -34,7 +34,11 @@ async fn main() -> ExitCode {
 
     match cli.command {
         Command::Run(args) => {
-            let observer: Arc<dyn Observer> = Arc::new(NullObserver::default());
+            let observer: Arc<dyn Observer> = if args.verbose {
+                Arc::new(StderrObserver::default())
+            } else {
+                Arc::new(NullObserver::default())
+            };
             let request = RunRequest {
                 file: &args.file,
                 input: args.input.as_deref().unwrap_or_default(),
@@ -53,6 +57,27 @@ async fn main() -> ExitCode {
                 }
             }
         }
+    }
+}
+
+/// An [`Observer`] that prints every run observation to stderr, prefixed with
+/// the elapsed time since the run began. Installed by `run --verbose`; the
+/// default [`NullObserver`] keeps non-verbose runs silent.
+struct StderrObserver {
+    started: std::time::Instant,
+}
+
+impl Default for StderrObserver {
+    fn default() -> Self {
+        Self {
+            started: std::time::Instant::now(),
+        }
+    }
+}
+
+impl Observer for StderrObserver {
+    fn observe(&self, _execution: &str, section: &str, event: Observation) {
+        eprintln!("+{:7.1}s [{section}] {event}", self.started.elapsed().as_secs_f64());
     }
 }
 

@@ -79,6 +79,14 @@ fn list_error_kind_does_not_depend_on_the_section_name() {
 }
 
 #[test]
+fn headings_inside_a_markdown_fence_stay_prose() {
+    let src = "---\nname: p\ndescription: d\npromptforge: 1\n---\n\n# T\n\n## Evaluate\n\n```lua\n-- p\n```\n\nProse.\n\n```markdown\n# Doc Title\n\n## {criterion name}\n\n## Missing From The Paper\n```\n\nMore.\n\n```lua\nvar.x = 1\n```\n\n## Report\n\n```lua\nreturn 'r'\n```\n";
+    let prompt = Prompt::parse(src, "test", &NullObserver).unwrap();
+    let names: Vec<&str> = prompt.sections.iter().map(|s| s.name.as_str()).collect();
+    assert_eq!(names, ["Evaluate", "Report"]);
+}
+
+#[test]
 fn parsed_prompt_value_types_are_equatable() {
     // PF-PARSER-011: parsing the same source twice yields equal values, and
     // a differing source yields unequal values, across the finalized parser
