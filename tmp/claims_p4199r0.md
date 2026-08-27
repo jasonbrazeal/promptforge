@@ -1,0 +1,86 @@
+- line 55: SD-4 lets one office appoint every subgroup chair, set the meeting schedule, and declare consensus
+- line 55: nothing in the document checks any of those powers
+- line 55: P4130R0 identifies five specific passages where WG21's internal practices document diverges from the ISO/IEC Directives that govern it
+- line 55: proposes five drop-in text replacements drawn directly from those
+- line 45: P4130R0 identifies five passages where SD-4 diverges from the ISO/IEC Directives
+- line 45: P4130R0 proposes five drop-in replacements: fixed three-year chair terms with committee confirmation, reconciliation-based consensus, unrestricted national body ballot comments, no penalty for exercising the formal appeal process, and explicit polls for substantive questions
+- line 45: P4238R0 documents how Contracts advanced through sixty-three papers in ten months without breaking a single procedural rule
+- line 45: P4238R0 asks seven of twenty-six voting P-members to return the DIS for the evaluation it skipped
+- line 45: P4302R1 proposes that any single delegate may block a counted tally on an unmailed revision, confining a narrow exception to wording corrections and feature removal
+- line 75: Two proposals have converged on the same configuration mechanism for runtime checking of core-language undefined behavior
+- line 75: P3100R8's own text states that if both are kept, one must be specified in terms of the other
+- line 75: the committee has not decided which
+- line 75: P4306R1 assembles the public record across more than a hundred cited sources - vendor documentation, maintainer statements, deployment reports from Google, Apple, Mozilla, Android, and Chrome
+- line 75: measures both candidate owners against four criteria already in the committee's record: deployment experience, existing practice, systematic coverage, and guarantee strength
+- line 75: no criterion settles ownership: P3100 leads on systematic coverage, the named-guarantee form has a decade of production deployment across three vendors with measured cost, both proposals' specifications are unshipped, and existing practice reads both ways depending on which clause of P2000R5 one invokes
+- line 75: The paper is a companion to P4297R1 and supplies the evidence record an explicit EWG ballot would weigh
+- line 81: Option A genuine wins on unwinding and on adding no new semantics
+- line 81: the deployment, security, and compatibility dimensions point toward the options that terminate or trap
+- line 81: preserving the noexcept operator's value, its meaning, and stack unwinding cannot all hold at once
+- line 85: Every hardened implementation the authors surveyed - libc++, libstdc++, MSVC STL, glibc, Google's server fleet, Android IntSan, UBSan, and three major framework assertion macros - terminates or traps on a detected core-language violation in production; not one defaults to continuation.
+- line 87: the committee already decided the adjacent case when it adopted P3878R1 into C++26 for library hardening
+- line 87: continuing past a detected violation executes user code on a state the language does not define - the exact hazard the security literature treats as worse than stopping
+- line 87: std::core_ub should reuse the C++26 enforce semantic, which preserves the handler invocation for telemetry while introducing no new semantic and leaving noexcept unchanged
+- line 87: It carves out two exceptions - the defined-replacement class (such as wrapped signed overflow) where the corrupted-state objection does not apply, and an explicit opt-in continuation mode for adoption periods
+- line 65: Seven consensus polls advanced P3100 into case-by-case EWG wording review
+- line 65: not one of them adopted the architecture that places Profiles beneath P3100's machinery
+- line 65: by the time an adoption poll exists, seventy-seven individual case approvals will stand behind the claim
+- line 65: The paper reconstructs the full poll history (Table 1)
+- line 65: identifies the six foundational wording clauses whose approval settles the architecture before any remaining case is reached (Table 2)
+- line 65: no published WG21 paper contests the characterization through the 2026-05 mailing
+- line 65: It proposes three polls - a scope statement, a process commitment, and an evidence standard - that let the wording review proceed unblocked while requiring the layering question to face its own dedicated ballot
+- line 69: WG21 has recorded counted polls on paper revisions that no national body expert outside the meeting room had seen
+- line 47: all ten papers constitute a single integrated argument at three levels
+- line 47: Any one paper gives the reader a specific tool: a governance amendment, a deployment survey, an evidence record, a working prototype.
+- line 47: Any one cluster gives the reader a compound understanding - of architectural independence, of violation-response design, or of procedural dynamics - that no single paper achieves alone.
+- line 47: the committee's existing frameworks, existing deployment evidence, and existing procedural rules already supply every piece needed to ship runtime safety checking for C++29 without waiting for the substrate proposed to absorb it
+- line 49: P4317R1 specifies std::core_ub with enough detail - and a working prototype - to evaluate cost, coverage, and interaction with existing sanitizer infrastructure
+- line 49: P4308R1's eight-option enumeration and requirements grid frame the tradeoff EWG must resolve
+- line 49: P4238R0 reconstructs the procedural sequence and states the specific ask - seven No votes out of twenty-six - with the supporting evidence cross-referenced to the companion governance papers
+- line 99: Ten contracts papers are examined through two lenses and every one of them either subordinates profiles to the contracts substrate or moves program behavior out of the source and into the build system - often both.
+- line 99: P4330R0 walks each proposal line by line, cataloguing the mechanisms by which a profiles safety framework loses its independence
+- line 99: the program-wide violation handler captures the response to core-language undefined behavior
+- line 99: Labels capture the configuration design space
+- line 99: class invariants are defined within contracts
+- line 99: continuation past a detected violation becomes the default that termination must opt into
+- line 99: hardened standard libraries already ship terminating runtime checks for bounds, null pointers, and iterator validity today - without P2900, without a program-wide handler, and without Labels
+- line 99: the framework proposed to absorb their configuration exists only as a Compiler Explorer prototype
+- line 99: The paper asks for nothing; it documents the architectural foreclosure and leaves the committee to decide whether that foreclosure is acceptable.
+- line 103: This reading guide covers 10 papers from the August 2026 mailing.
+- line 61: Every C++ DIS ballot from C++11 through C++23 passed unanimously
+- line 61: the C++ Alliance is asking National Bodies to break that streak by voting No on C++26
+- line 61: Contracts advanced through sixty-three papers in ten months
+- line 61: each merging an incremental change that became the settled baseline for the next poll
+- line 61: the accumulation was treated as a mandate that no single vote had granted
+- line 61: all without breaking a single procedural rule
+- line 61: It reconstructs the closed TS path, the reversed burden of removal, the compressed review windows, and the contradictory consensus determinations
+- line 61: drawing on reflector statements from Stroustrup, Dos Reis, and co-author Spicer
+- line 61: who chaired SG21 during the period in question
+- line 61: now concludes that P2900 "does not make anything better"
+- line 61: The authors request no floor time, no poll, and no committee action
+- line 61: they state a position and ask seven of twenty-six voting P-members to return the draft for the evaluation it skipped
+- line 21: Contracts reached C++26 without a dedicated architecture ballot - backed by deployment evidence from eight shipping systems.
+- line 23: This paper summarizes 10 papers published in the August 2026 mailing.
+- line 33: P4317R1 defines `std::core_ub` under the P3589R2 Profiles framework - the same 77 runtime-checkable cases of core-language undefined behavior that P3100R8 enumerates, guarded by a single annotation, with zero foundational wording changes and no contract-violation handler dependency.
+- line 33: A working Clang prototype demonstrates 7 locally checkable cases on Compiler Explorer.
+- line 33: P4297R1 reconstructs the seven consensus polls that advanced P3100 and shows that not one of them adopted the architecture placing Profiles beneath its machinery.
+- line 33: P4306R1 assembles more than a hundred cited sources and measures both candidate owners against four criteria already in the committee record.
+- line 33: P4330R0 walks ten contracts papers line by line and catalogues the mechanisms by which a profiles safety framework loses its independence.
+- line 33: Together these four papers establish that the alternative to waiting for contracts already exists, already works, and now runs live - the enumeration consensus in P3100R8 is separable from the architecture dispute over routing.
+- line 35: the contracts substrate captures the violation response, the configuration design space, and the definition of class invariants - leaving profiles with no independent path to deployment.
+- line 39: the foreclosure is not one decision but a distributed accumulation of incremental merges whose aggregate effect was never the subject of a standalone ballot.
+- line 39: P4317R1's prototype demonstrates that separability is not a theoretical argument - it is running code.
+- line 41: P4308R1 enumerates all eight possible responses to a throwing implicit contract assertion, expands EWG's current four-option menu, and scores them against six requirements drawn from P3100R8's own prose plus five dimensions from the public record.
+- line 41: P4310R1 surveys every hardened implementation - libc++, libstdc++, MSVC STL, glibc, Google's server fleet, Android IntSan, UBSan, and three major framework assertion macros - and finds that not one defaults to continuation in production.
+- line 41: P4318R1 applies net-present-value reasoning to the portable continuation guarantee and rejects it on two independent grounds: the marginal value is near zero because the capability already ships as vendor opt-ins, and the cost falls as a perpetuity on every conforming implementation while the benefit decays as codebases complete adoption windows.
+- line 91: The same 77 runtime-checkable cases of core-language undefined behavior that P3100R8 enumerates can be guarded by a single profile
+- line 91: with zero foundational wording changes and no contract-violation handler dependency
+- line 91: P4317R1 defines std::core_ub under the P3589R2 Profiles framework
+- line 91: one annotation ([[profiles::enforce(std::core_ub)]]) activates all checks, violations terminate, and 15 cases such as signed overflow and division by zero receive well-defined replacement values instead
+- line 91: A working Clang prototype demonstrates 7 locally checkable cases on Compiler Explorer, with live examples covering misaligned access, null dereference, out-of-bounds subscript, and arithmetic UB
+- line 91: the paper serves as evidence that the enumeration consensus in P3100R8 is separable from the architecture dispute over routing
+- line 95: libc++ and Bloomberg's BDE already ship the same capability as vendor opt-ins documented for adoption-period use only
+- line 95: the marginal value of the portable guarantee is near zero
+- line 95: the benefit decays as codebases complete their adoption windows while the cost - implementer maintenance the libc++ team has stated (P3191R0) it will not carry, definitional coupling through a noexcept meaning-shift, and cognitive load - falls on every conforming implementation as a perpetuity
+- line 95: the paper explicitly credits P3100R8's enumeration of undefined behavior and its terminating responses as carrying durable value
+- line 95: the model prices only the one slice whose benefit is transient and whose delivery mechanism is the hardest to reverse
