@@ -1,0 +1,147 @@
+- line 51: The grammar splits *sb-identifier* into two explicit alternatives
+- line 148: any class type with publicly accessible direct members and no `std::tuple_size` specialization reaches this case, including non-aggregates with user-provided constructors
+- line 95: The expansions below are illustrative — they show the intended semantics in terms of equivalent code, not normative wording.
+- line 156: A const-qualified structured binding that contains `using`-marked elements is ill-formed.
+- line 194: C++26 (P2686R5) makes `constexpr` valid for structured binding declarations for non-`using` elements
+- line 98: struct Point { int x, y; };
+- line 99: using PointPair = std::pair<Point, Point>;
+- line 100: PointPair  get_pair();
+- line 101: Point      get_point();
+- line 190: Non-using elements are unaffected — y above would be a valid static or thread-local binding.
+- line 197: constexpr auto [x, y] = get_pair();  // valid in C++26; x and y usable in constant expressions
+- line 27: This proposal introduces an extension to C++ structured bindings, allowing assignment to existing variables.
+- line 31: Structured bindings (`auto [x, y] = foo();`) can only declare new variables.
+- line 31: Assigning to pre-existing variables requires `std::tie` from `<tuple>`.
+- line 31: There is no single construct that does both.
+- line 35: Neither `std::tie` nor structured bindings alone allow some elements to be new variables and others pre-existing in the same statement.
+- line 35: P3817 uniquely enables this
+- line 41: One construct for both assignment and initialization reduces cognitive overhead and produces more consistent code.
+- line 41: Currently, initialization uses structured bindings; reassignment uses `std::tie`.
+- line 42: `std::tie` requires `<tuple>`, which is unavailable in many constrained environments (embedded systems, bare-metal, OS kernels).
+- line 42: A language-level feature works everywhere C++ does.
+- line 186: static auto [using x, y] = f();        // ill-formed
+- line 187: thread_local auto [using x, y] = f();  // ill-formed
+- line 59: The first alternative is the existing declaration form, unchanged.
+- line 59: The second is new: `using` followed by a *unary-expression* that shall designate a modifiable lvalue.
+- line 59: No *attribute-specifier-seq* appears in the second alternative — attributes appertain to a newly declared variable, and no variable is introduced here.
+- line 61: When `...` is present, the `unary-expression` shall be a pack expression; the `...` marks the expansion of that expression, not the introduction of a new pack name.
+- line 65: The hidden variable *e* is introduced exactly as today (per [[dcl.struct.bind] ¶1](https://eel.is/c++draft/dcl.struct.bind)).
+- line 65: for a `using`-marked element, instead of introducing a new name, the implementation assigns from the corresponding element of *e* to the existing variable via `operator=`.
+- line 67: The *ref-qualifier* determines the type of *e*, which in turn determines whether the assignment is a copy or a move — no special-casing is required
+- line 226: P3817 composes naturally with C++26's `_` placeholder for discarding elements
+- line 233: `using _` is ill-formed — `_` is a discard placeholder and cannot be the target of an assignment
+- line 235: This provides a complete, library-free replacement for `std::tie` with `std::ignore`
+- line 77: auto [using x, y] = f()
+- line 78: owned object (xvalue)
+- line 79: move
+- line 82: auto& [using x, y] = f()
+- line 83: lvalue reference
+- line 84: copy
+- line 87: auto&& [using x, y] = f()
+- line 88: lvalue ref or rvalue ref
+- line 89: copy or move
+- line 74: Assignment to using x
+- line 255: Using the same variable more than once in a `using`-marked binding list is ill-formed
+- line 150: For `auto [using x, ...]`, the move assignment to `x` happens at the binding statement.
+- line 156: A const-qualified structured binding that contains `using`-marked elements is ill-formed.
+- line 166: Under this alternative, `const` appertains to the hidden variable *e* — not to the `using`-marked targets — and the declaration is valid.
+- line 173: a declaration cannot retroactively change the type of an existing variable
+- line 175: In practice, `const` would only make *e* const, causing assignments to copy rather than move
+- line 177: for types with `mutable` data members, `const` on *e* does not suppress those members — `mutable` members remain modifiable and moveable even through a `const` object
+- line 179: The authors therefore prefer the ill-formed approach.
+- line 183: `static` and `thread_local` are both storage-class specifiers — they declare a new entity with a particular storage duration.
+- line 183: `using`-marked elements introduce no new entity; an existing variable already has its own storage class.
+- line 184: There is nothing for `static` or `thread_local` to act on in the `using`-marked positions, making their combination with `using` ill-formed
+- line 190: Non-`using` elements are unaffected — `y` above would be a valid static or thread-local binding.
+- line 194: C++26 (P2686R5) makes `constexpr` valid for structured binding declarations for non-`using` elements
+- line 166: Under this alternative, `const` appertains to the hidden variable *e* — not to the `using`-marked targets — and the declaration is valid.
+- line 166: this raises a question that defies easy resolution
+- line 173: a declaration cannot retroactively change the type of an existing variable
+- line 173: `const` has no observable effect on the `using`-marked elements, which is misleading
+- line 175: `const` would only make *e* const, causing assignments to copy rather than move — a subtle effect invisible in the source.
+- line 177: for types with `mutable` data members, `const` on *e* does not suppress those members — `mutable` members remain modifiable and moveable even through a `const` object.
+- line 177: Under this alternative, `const auto [using p, ...]` where the corresponding source member is `mutable` would still produce a move, not a copy.
+- line 177: This inconsistency — copying from some elements and moving from others depending on `mutable` — further undermines the predictability of this option.
+- line 179: The authors therefore prefer the ill-formed approach.
+- line 183: `static` and `thread_local` are both storage-class specifiers — they declare a new entity with a particular storage duration.
+- line 183: `using`-marked elements introduce no new entity; an existing variable already has its own storage class.
+- line 183: There is nothing for `static` or `thread_local` to act on in the `using`-marked positions, making their combination with `using` ill-formed
+- line 255: Using the same variable more than once in a `using`-marked binding list is ill-formed
+- line 255: Using the same variable more than once in a `using`-marked binding list is ill-formed
+- line 262: Even for types where repeated assignment would be well-defined (e.g., a type whose `operator=` accumulates values), the construct is rejected as inherently confusing.
+- line 266: P3817 composes naturally with C++26 structured binding packs
+- line 268: Non-pack `using` alongside a regular pack requires no special treatment — the two are orthogonal
+- line 276: when `...` is present after `using`, `expr` shall be a pack expression
+- line 276: Each element of the structured binding is assigned from the corresponding element of *e* to the corresponding expansion of `expr`, following the same ref-qualifier rules as non-pack `using`
+- line 276: No new name is introduced
+- line 285: Mixed usage is also valid
+- line 266: P3817 composes naturally with C++26 structured binding packs ([P1061](https://wg21.link/P1061)).
+- line 268: Non-pack `using` alongside a regular pack requires no special treatment — the two are orthogonal
+- line 276: when `...` is present after `using`, `expr` shall be a pack expression
+- line 276: Each element of the structured binding is assigned from the corresponding element of *e* to the corresponding expansion of `expr`, following the same ref-qualifier rules as non-pack `using`.
+- line 276: No new name is introduced
+- line 296: `using ..._` is ill-formed — `_` is a discard placeholder.
+- line 297: `sizeof...(expr)` must equal the structured binding size of *e* minus the number of non-pack elements; otherwise the program is ill-formed.
+- line 298: If expanding `expr` produces duplicate lvalue targets, the program is ill-formed (the duplicate variable rule extended to packs).
+- line 302: Assigning from a tuple-like type to a pack of existing variables without P3817 requires either the standard library or significant boilerplate
+- line 307: Option 1: std::tie — requires &lt;tuple>
+- line 310: Option 2: index sequence — verbose
+- line 47: Extend structured binding syntax to allow the `using` keyword before an element in the *sb-identifier-list* to denote assignment to an already-existing lvalue, rather than declaration of a new variable.
+- line 59: The second is new: `using` followed by a *unary-expression* that shall designate a modifiable lvalue.
+- line 59: No *attribute-specifier-seq* appears in the second alternative — attributes appertain to a newly declared variable, and no variable is introduced here.
+- line 61: When `...` is present, the `unary-expression` shall be a pack expression; the `...` marks the expansion of that expression, not the introduction of a new pack name.
+- line 65: The hidden variable *e* is introduced exactly as today (per [[dcl.struct.bind] ¶1](https://eel.is/c++draft/dcl.struct.bind)).
+- line 65: for a `using`-marked element, instead of introducing a new name, the implementation assigns from the corresponding element of *e* to the existing variable via `operator=`.
+- line 67: The *ref-qualifier* determines the type of *e*, which in turn determines whether the assignment is a copy or a move — no special-casing is required
+- line 150: For `auto [using x, ...]`, the move assignment to `x` happens at the binding statement.
+- line 156: A const-qualified structured binding that contains `using`-marked elements is ill-formed.
+- line 166: Under this alternative, `const` appertains to the hidden variable *e* — not to the `using`-marked targets — and the declaration is valid.
+- line 173: a declaration cannot retroactively change the type of an existing variable.
+- line 175: In practice, `const` would only make *e* const, causing assignments to copy rather than move — a subtle effect invisible in the source.
+- line 177: for types with `mutable` data members, `const` on *e* does not suppress those members — `mutable` members remain modifiable and moveable even through a `const` object.
+- line 177: Under this alternative, `const auto [using p, ...]` where the corresponding source member is `mutable` would still produce a move, not a copy.
+- line 183: `static` and `thread_local` are both storage-class specifiers — they declare a new entity with a particular storage duration. `using`-marked elements introduce no new entity; an existing variable already has its own storage class.
+- line 183: their combination with `using` ill-formed
+- line 194: C++26 (P2686R5) makes `constexpr` valid for structured binding declarations for non-`using` elements
+- line 148: any class type with publicly accessible direct members and no `std::tuple_size` specialization reaches this case, including non-aggregates with user-provided constructors.
+- line 347: Mixed-mode is equally natural — accumulate one variable while binding fresh names for the rest
+- line 266: P3817 composes naturally with C++26 structured binding packs
+- line 268: Non-pack `using` alongside a regular pack requires no special treatment — the two are orthogonal
+- line 276: when `...` is present after `using`, `expr` shall be a pack expression
+- line 276: Each element of the structured binding is assigned from the corresponding element of *e* to the corresponding expansion of `expr`, following the same ref-qualifier rules as non-pack `using`
+- line 277: No new name is introduced
+- line 150: For `auto [using x, ...]`, the move assignment to `x` happens at the binding statement.
+- line 156: A const-qualified structured binding that contains `using`-marked elements is ill-formed.
+- line 190: Non-`using` elements are unaffected — `y` above would be a valid static or thread-local binding.
+- line 41: One construct for both assignment and initialization reduces cognitive overhead and produces more consistent code.
+- line 41: Currently, initialization uses structured bindings; reassignment uses `std::tie`.
+- line 42: `std::tie` requires `&lt;tuple>`, which is unavailable in many constrained environments (embedded systems, bare-metal, OS kernels).
+- line 42: A language-level feature works everywhere C++ does.
+- line 43: The authors of the original structured bindings paper explicitly invited this extension [section 3.3]
+- line 294: The existing constraints extend naturally:
+- line 27: This proposal introduces an extension to C++ structured bindings, allowing assignment to existing variables.
+- line 31: Structured bindings (`auto [x, y] = foo();`) can only declare new variables.
+- line 31: Assigning to pre-existing variables requires `std::tie` from `&lt;tuple>`.
+- line 31: There is no single construct that does both.
+- line 33: This proposal closes that gap, with several advantages over std::tie
+- line 35: Neither `std::tie` nor structured bindings alone allow some elements to be new variables and others pre-existing in the same statement.
+- line 35: P3817 uniquely enables this
+- line 255: Using the same variable more than once in a `using`-marked binding list is ill-formed
+- line 285: Mixed usage is also valid
+- line 226: P3817 composes naturally with C++26's `_` placeholder for discarding elements
+- line 233: `using _` is ill-formed — `_` is a discard placeholder and cannot be the target of an assignment
+- line 235: This provides a complete, library-free replacement for `std::tie` with `std::ignore`
+- line 297: sizeof...(expr) must equal the structured binding size of *e* minus the number of non-pack elements; otherwise the program is ill-formed.
+- line 302: Assigning from a tuple-like type to a pack of existing variables without P3817 requires either the standard library or significant boilerplate
+- line 262: Even for types where repeated assignment would be well-defined (e.g., a type whose `operator=` accumulates values), the construct is rejected as inherently confusing.
+- line 266: P3817 composes naturally with C++26 structured binding packs
+- line 268: Non-pack `using` alongside a regular pack requires no special treatment — the two are orthogonal
+- line 166: Under this alternative, `const` appertains to the hidden variable *e* — not to the `using`-marked targets — and the declaration is valid.
+- line 173: a declaration cannot retroactively change the type of an existing variable
+- line 175: In practice, `const` would only make *e* const, causing assignments to copy rather than move — a subtle effect invisible in the source.
+- line 177: for types with `mutable` data members, `const` on *e* does not suppress those members — `mutable` members remain modifiable and moveable even through a `const` object
+- line 177: Under this alternative, `const auto [using p, ...]` where the corresponding source member is `mutable` would still produce a move, not a copy.
+- line 179: The authors therefore prefer the ill-formed approach.
+- line 183: `static` and `thread_local` are both storage-class specifiers — they declare a new entity with a particular storage duration.
+- line 183: `using`-marked elements introduce no new entity; an existing variable already has its own storage class.
+- line 183: There is nothing for `static` or `thread_local` to act on in the `using`-marked positions, making their combination with `using` ill-formed
