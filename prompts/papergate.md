@@ -92,6 +92,7 @@ else
 - a line of code or an inline code span;
 - HTML markup or the text of a table cell (`<th>`/`<td>`);
 - a heading, caption, or list-item label;
+- a revision-history entry or other document bookkeeping (dates, audiences, author lines) — it describes the paper, not the subject matter;
 - a stage-direction phrase such as "What follows is...", "Here we show...", or "Consider the following...".
 
 Code and tables illustrate claims; the claim itself always lives in the prose around them.]]
@@ -123,6 +124,6 @@ A claim is a declarative sentence that makes a verifiable assertion about behavi
 Call `add_claim` once for each claim, in the order it appears in the block, with these parameters:
 
 - "line": the line number shown at the start of the line where the quote begins.
-- "quote": the shortest verbatim substring of the paper that identifies the claim, copied character-for-character. Make it 3 to 40 words. Never span more than one paragraph; when a sentence argues at length, quote only the clause that makes the assertion.
+- "quote": the shortest verbatim substring of the paper that identifies the claim, copied character-for-character — preserve inline-code backticks, emphasis markers, and link syntax exactly as they appear. Make it 3 to 40 words. Never span more than one paragraph; when a sentence argues at length, quote only the clause that makes the assertion.
 
 If the block contains no claims, do not call the tool. When you have recorded every claim - or there are none - reply with exactly `done`.
