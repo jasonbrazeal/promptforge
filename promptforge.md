@@ -125,6 +125,7 @@ Authoritative schema: `crates/promptforge-core/src/parser/build.rs`
 | `store.glob(pattern)` | List matching paths |
 | `store.exists(path)` | Check existence |
 | `untrusted(s)` | Wrap a string in the untrusted guard envelope |
+| `md_to_json(md)` | Chunk markdown into a flat, typed block list |
 | `return value` | End run, return value |
 | `jump("## Section")` | Transfer control to a visible section (a sibling or a direct child); a child target starts a child-level walk |
 | `execute("## Section", input?)` | Start a contained chain at a visible section (a sibling or a direct child); returns the chain's final reply |

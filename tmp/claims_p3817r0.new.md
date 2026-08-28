@@ -1,0 +1,105 @@
+- line 27: This proposal introduces an extension to C++ structured bindings, allowing assignment to existing variables.
+- line 33: This proposal closes that gap, with several advantages over std::tie
+- line 47: Extend structured binding syntax to allow the `using` keyword before an element in the *sb-identifier-list* to denote assignment to an already-existing lvalue, rather than declaration of a new variable.
+- line 51: The grammar splits *sb-identifier* into two explicit alternatives
+- line 31: Structured bindings (auto [x, y] = foo();) can only declare new variables.
+- line 31: Assigning to pre-existing variables requires std::tie from <tuple>.
+- line 31: There is no single construct that does both.
+- line 67: The *ref-qualifier* determines the type of *e*, which in turn determines whether the assignment is a copy or a move
+- line 95: The expansions below are illustrative — they show the intended semantics in terms of equivalent code, not normative wording.
+- line 61: When `...` is present, the `unary-expression` shall be a pack expression
+- line 61: the `...` marks the expansion of that expression, not the introduction of a new pack name
+- line 65: The hidden variable *e* is introduced exactly as today
+- line 65: for a `using`-marked element, instead of introducing a new name, the implementation assigns from the corresponding element of *e* to the existing variable via `operator=`
+- line 150: For `auto [using x, ...]`, the move assignment to `x` happens at the binding statement.
+- line 67: no special-casing is required
+- line 59: The first alternative is the existing declaration form, unchanged.
+- line 59: The second is new: `using` followed by a *unary-expression* that shall designate a modifiable lvalue.
+- line 59: No *attribute-specifier-seq* appears in the second alternative — attributes appertain to a newly declared variable, and no variable is introduced here.
+- line 148: [dcl.struct.bind] ¶8 imposes no aggregate requirement
+- line 148: any class type with publicly accessible direct members and no std::tuple_size specialization reaches this case, including non-aggregates with user-provided constructors
+- line 156: A const-qualified structured binding that contains `using`-marked elements is ill-formed.
+- line 161: ill-formed: cannot assign in a const binding
+- line 175: const would only make *e* const, causing assignments to copy rather than move
+- line 179: The authors therefore prefer the ill-formed approach.
+- line 35: Neither `std::tie` nor structured bindings alone allow some elements to be new variables and others pre-existing in the same statement.
+- line 35: P3817 uniquely enables this
+- line 41: One construct for both assignment and initialization reduces cognitive overhead and produces more consistent code.
+- line 41: Currently, initialization uses structured bindings; reassignment uses `std::tie`.
+- line 42: `std::tie` requires `<tuple>`, which is unavailable in many constrained environments (embedded systems, bare-metal, OS kernels).
+- line 42: A language-level feature works everywhere C++ does.
+- line 43: The authors of the original structured bindings paper explicitly invited this extension
+- line 166: Under this alternative, `const` appertains to the hidden variable *e* — not to the `using`-marked targets — and the declaration is valid.
+- line 166: this raises a question that defies easy resolution
+- line 173: a declaration cannot retroactively change the type of an existing variable
+- line 173: if no, then `const` has no observable effect on the `using`-marked elements, which is misleading
+- line 186: ill-formed
+- line 187: ill-formed
+- line 194: C++26 (P2686R5) makes `constexpr` valid for structured binding declarations for non-`using` elements
+- line 197: valid in C++26; x and y usable in constant expressions
+- line 203: ill-formed: constexpr implies const
+- line 200: For `using`-marked elements, `constexpr` implies `const` and is therefore ill-formed for the same reason as `const`
+- line 190: Non-`using` elements are unaffected
+- line 190: `y` above would be a valid static or thread-local binding
+- line 183: `static` and `thread_local` are both storage-class specifiers — they declare a new entity with a particular storage duration.
+- line 183: `using`-marked elements introduce no new entity; an existing variable already has its own storage class.
+- line 183: There is nothing for `static` or `thread_local` to act on in the `using`-marked positions, making their combination with `using` ill-formed
+- line 177: for types with `mutable` data members, `const` on *e* does not suppress those members
+- line 177: `mutable` members remain modifiable and moveable even through a `const` object
+- line 177: Under this alternative, `const auto [using p, ...]` where the corresponding source member is `mutable` would still produce a move, not a copy
+- line 177: This inconsistency — copying from some elements and moving from others depending on `mutable` — further undermines the predictability of this option
+- line 230: assign first element to x, discard second
+- line 226: P3817 composes naturally with C++26's `_` placeholder for discarding elements
+- line 235: This provides a complete, library-free replacement for `std::tie` with `std::ignore`
+- line 208: `constinit` requires static or thread-local storage duration.
+- line 208: both storage-class specifiers are ill-formed with `using`-marked elements
+- line 208: `constinit` with `using` is always ill-formed — no new rule beyond the storage class rule is needed.
+- line 214: The `using` specifier may also appear before an expression yielding an lvalue, not just a plain identifier.
+- line 214: This is the language-level equivalent of `std::tie` with non-variable arguments
+- line 233: using _ is ill-formed
+- line 233: _ is a discard placeholder and cannot be the target of an assignment
+- line 259: ill-formed
+- line 255: Using the same variable more than once in a `using`-marked binding list is ill-formed
+- line 262: Even for types where repeated assignment would be well-defined (e.g., a type whose `operator=` accumulates values), the construct is rejected as inherently confusing.
+- line 217: std::tie equivalent
+- line 220: with P3817
+- line 266: P3817 composes naturally with C++26 structured binding packs
+- line 268: Non-pack `using` alongside a regular pack requires no special treatment — the two are orthogonal
+- line 281: each tuple element moved into the corresponding target
+- line 285: Mixed usage is also valid
+- line 272: x is assigned; rest is a new binding pack
+- line 273: rest is a new binding pack; x is assigned last
+- line 302: Assigning from a tuple-like type to a pack of existing variables without P3817 requires either the standard library or significant boilerplate
+- line 276: when `...` is present after `using`, `expr` shall be a pack expression
+- line 276: Each element of the structured binding is assigned from the corresponding element of *e* to the corresponding expansion of `expr`, following the same ref-qualifier rules as non-pack `using`
+- line 276: No new name is introduced
+- line 307: Option 1: std::tie — requires &lt;tuple>
+- line 310: Option 2: index sequence — verbose
+- line 336: Returns {head, tail} split at the first delimiter
+- line 347: Mixed-mode is equally natural — accumulate one variable while binding fresh names for the rest
+- line 351: last updated each step
+- line 352: last is the final point of the trajectory
+- line 296: using ..._ is ill-formed — _ is a discard placeholder.
+- line 297: sizeof...(expr) must equal the structured binding size of e minus the number of non-pack elements; otherwise the program is ill-formed.
+- line 298: If expanding expr produces duplicate lvalue targets, the program is ill-formed (the duplicate variable rule extended to packs).
+- line 333: the structured binding declaration fires on every iteration
+- line 333: `using`-marked elements are reassigned each time
+- line 333: This enables tracking state across iterations without a separate assignment in the loop body
+- line 412: Concise
+- line 412: & suggests "referencing something that already exists"
+- line 412: Familiar to developers comfortable with reference syntax
+- line 425: More verbose than `&`
+- line 425: Introduces contextual keyword usage within structured bindings
+- line 414: Ambiguous with address-of in expressions like `auto [&get_reference(), y] = ...`
+- line 414: `]]` in `auto [&map[key], y]` resembles attribute syntax
+- line 414: Visual similarity to `auto& [x, y]` may cause initial confusion
+- line 440: P0144R2 — Structured Bindings: Introduced structured bindings; §3.3 explicitly deferred this extension with an invitation to propose it separately.
+- line 441: P2392 — C++ Standard Library Support for Structured Bindings: Highlights the community’s ongoing interest in extending structured binding utility.
+- line 423: Unambiguous — no confusion with address-of or function pointers
+- line 423: Clear semantic intent: “using” an existing variable rather than declaring a new one
+- line 423: Works cleanly with returned lvalues: `auto [using get_reference(), y] = ...`
+- line 423: Echoes the existing use of `using` to refer to a name declared elsewhere
+- line 429: `=x` — Conflicts with lambda capture-by-value intuition (`[=]`).
+- line 430: `let` — Conflicts with Pattern Matching proposals.
+- line 431: `tie x` — Overly verbose; confusingly evokes `std::tie` even though it does not use it.
+- line 432: Implicit (no specifier) — Would silently assign or shadow based on scope, violating the principle of least surprise.
